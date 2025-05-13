@@ -8,17 +8,27 @@ pygame.init()
 width = 800
 height = 600
 screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption("Camera Following Ball")
+pygame.display.set_caption("Image as Ball")
 
 # Colors
 white = (255, 255, 255)
-blue = (0, 0, 255)
 green = (0, 128, 0)
 
-# Ball properties
-ball_radius = 15
-ball_x = width // 2
-ball_y = 50
+# Load the ball image
+try:
+    ball_image = pygame.image.load("horse.png").convert_alpha()
+    # Replace "your_ball_image.png" with the actual path to your image file.
+    # .convert_alpha() is important for images with transparency.
+except pygame.error as e:
+    print(f"Error loading image: {e}")
+    pygame.quit()
+    sys.exit()
+
+# Get the dimensions of the image
+ball_rect = ball_image.get_rect()
+ball_rect.center = (width // 2, 50)  # Initial position
+
+# Ball properties (we'll use the rect for position)
 ball_speed_x = 0
 ball_speed_y = 0
 gravity = 0.5
@@ -32,7 +42,7 @@ platform_x = (width - platform_width) // 2
 platform_y = height - platform_height - 50
 
 # Camera properties
-camera_x = 0  # Initial camera offset
+camera_x = 0
 
 # Game loop
 running = True
@@ -54,52 +64,46 @@ while running:
     # Apply gravity
     ball_speed_y += gravity
 
-    # Move the ball
-    ball_x += ball_speed_x
-    ball_y += ball_speed_y
+    # Move the ball (using the rect)
+    ball_rect.x += int(ball_speed_x)
+    ball_rect.y += int(ball_speed_y)
 
     # Ball collision with left wall (elastic)
-    if ball_x - ball_radius < 0:
+    if ball_rect.left < 0:
         ball_speed_x *= -1
-        ball_x = ball_radius
+        ball_rect.left = 0
 
     # Ball collision with top wall (elastic)
-    if ball_y - ball_radius < 0:
+    if ball_rect.top < 0:
         ball_speed_y *= -1
-        ball_y = ball_radius
+        ball_rect.top = 0
 
     # Ball collision with platform (elastic)
-    if ball_y + ball_radius > platform_y and \
-       ball_x + ball_radius > platform_x - camera_x and \
-       ball_x - ball_radius < platform_x + platform_width - camera_x and \
+    if ball_rect.bottom > platform_y and \
+       ball_rect.right > platform_x - camera_x and \
+       ball_rect.left < platform_x + platform_width - camera_x and \
        ball_speed_y > 0:
-        ball_y = platform_y - ball_radius
+        ball_rect.bottom = platform_y
         ball_speed_y *= -1
 
     # Ball hits the bottom (elastic)
-    elif ball_y + ball_radius > height:
-        ball_y = height - ball_radius
+    elif ball_rect.bottom > height:
+        ball_rect.bottom = height
         ball_speed_y *= -1
         ball_speed_x *= 1.0
 
     # Camera follow logic
-    camera_speed = 5  # Adjust for how quickly the camera follows
-    if ball_x > width // 2 + 100 + camera_x:  # If ball moves past a certain point on the right
-        camera_x += ball_speed_x # Or += camera_speed for constant follow speed
-    elif ball_x < width // 2 - 100 + camera_x and camera_x > 0: # If ball moves past a certain point on the left and camera is not at the start
-        camera_x += ball_speed_x # Or -= camera_speed for constant follow speed
-
-    # Keep camera within reasonable bounds (optional, for a finite world)
-    # if camera_x < 0:
-    #     camera_x = 0
-    # elif camera_x > world_width - width: # Assuming you have a world_width defined
-    #     camera_x = world_width - width
+    camera_speed = 5
+    if ball_rect.centerx > width // 2 + 100 + camera_x:
+        camera_x += ball_speed_x
+    elif ball_rect.centerx < width // 2 - 100 + camera_x and camera_x > 0:
+        camera_x += ball_speed_x
 
     # Clear the screen
     screen.fill(white)
 
-    # Draw the ball (relative to the camera)
-    pygame.draw.circle(screen, blue, (int(ball_x - camera_x), int(ball_y)), ball_radius)
+    # Draw the ball image (relative to the camera)
+    screen.blit(ball_image, (ball_rect.x - camera_x, ball_rect.y))
 
     # Draw the platform (relative to the camera)
     pygame.draw.rect(screen, green, (int(platform_x - camera_x), int(platform_y), platform_width, platform_height))
