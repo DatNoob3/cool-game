@@ -25,35 +25,38 @@ class Car(pygame.sprite.Sprite):
 
     def update(self):
         keys = pygame.key.get_pressed()
+        # accelerate/brake
         if keys[pygame.K_UP]:
             self.vel += pygame.math.Vector2(0, -self.acceleration).rotate(self.angle)
         if keys[pygame.K_DOWN]:
             self.vel *= 0.9
+
+        # turn
         if keys[pygame.K_RIGHT]:
             self.angle += self.turn_speed
         if keys[pygame.K_LEFT]:
             self.angle -= self.turn_speed
 
+        # limit speed
         if self.vel.length() > self.max_speed:
             self.vel.scale_to_length(self.max_speed)
 
+        # update position
         self.pos += self.vel
 
-        # 🔁 Fix distorted rotation
+        # fix distorted rotation
         self.image = pygame.transform.rotozoom(self.original_image, -self.angle, 1)
         self.rect = self.image.get_rect(center=self.pos)
-
 
 
 # ─── Main Game ────────────────────────────────────────────────────────────────
 def main():
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Top-Down Racing Template")
+    pygame.display.set_caption("Amazing Racing Game!!!")
     clock = pygame.time.Clock()
 	
     camera_offset = pygame.Vector2(0, 0)
-
 
     # Sprite groups
     all_sprites = pygame.sprite.Group()
@@ -75,9 +78,9 @@ def main():
 
         # ─── Update ────────────────────────────────────────────────
         all_sprites.update()
+        # keeps player centered
         camera_offset.x = player.pos.x - SCREEN_WIDTH // 2
         camera_offset.y = player.pos.y - SCREEN_HEIGHT // 2
-
 
         # ─── Collision with edges ─────────────────────────────────
         for edge in track_edges:
@@ -99,7 +102,6 @@ def main():
         # Draw car manually (skip all_sprites.draw())
         for sprite in all_sprites:
             screen.blit(sprite.image, sprite.rect.move(-camera_offset))
-
 
         pygame.display.flip()
         clock.tick(FPS)
